@@ -1,8 +1,7 @@
 
-import { useState } from "react";
 import { Button } from "@/components/ui/button";
-import { Calendar, Menu, User, LogOut } from "lucide-react";
-import { 
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
@@ -10,150 +9,83 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
-import { cn } from "@/lib/utils";
+import { Bell, LogOut, Moon, Settings, Sun, User } from "lucide-react";
 
-interface NavbarProps {
-  userEmail?: string;
-  userName?: string;
-  onLogout?: () => void;
-}
+type NavbarProps = {
+  userEmail: string;
+  userName: string;
+  onLogout: () => void;
+  onThemeToggle: () => void;
+  currentTheme: string;
+};
 
-const Navbar = ({ userEmail = "admin@salaodonto.com", userName = "Administrador", onLogout }: NavbarProps) => {
-  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
-  
-  const handleLogout = () => {
-    if (onLogout) {
-      onLogout();
-    }
+const Navbar = ({ 
+  userEmail, 
+  userName,
+  onLogout,
+  onThemeToggle,
+  currentTheme 
+}: NavbarProps) => {
+  const getInitials = (name: string) => {
+    return name
+      .split(' ')
+      .map(part => part[0])
+      .join('')
+      .toUpperCase()
+      .substring(0, 2);
   };
-  
+
   return (
     <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
       <div className="container flex h-14 items-center">
         <div className="mr-4 flex">
           <a href="/" className="flex items-center space-x-2">
-            <Calendar className="h-6 w-6 text-sala-blue" />
-            <span className="font-bold">CAIXA RÁPIDO</span>
+            <span className="font-bold">Sala Black</span>
           </a>
-          <span className="ml-2 rounded-md bg-sala-blue px-1.5 py-0.5 text-xs font-medium text-white">
-            SALA BLACK
-          </span>
         </div>
-        
-        <div className="hidden md:flex md:flex-1 md:items-center md:justify-between">
-          <nav className="flex items-center space-x-4 text-sm font-medium">
-            <a
-              href="#"
-              className="transition-colors hover:text-foreground/80 text-foreground"
-            >
-              Dashboard
-            </a>
-            <a
-              href="#"
-              className="transition-colors hover:text-foreground/80 text-muted-foreground"
-            >
-              Tarefas
-            </a>
-            <a
-              href="#"
-              className="transition-colors hover:text-foreground/80 text-muted-foreground"
-            >
-              Equipe
-            </a>
-            <a
-              href="#"
-              className="transition-colors hover:text-foreground/80 text-muted-foreground"
-            >
-              Configurações
-            </a>
-          </nav>
+        <div className="flex-1"></div>
+        <div className="flex items-center space-x-2">
+          <Button variant="ghost" size="icon" onClick={onThemeToggle}>
+            {currentTheme === "dark" ? <Sun className="h-5 w-5" /> : <Moon className="h-5 w-5" />}
+          </Button>
           
-          <div className="flex items-center space-x-4">
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Button variant="ghost" className="relative h-8 w-8 rounded-full">
-                  <User className="h-5 w-5" />
-                </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="end">
-                <DropdownMenuLabel>Minha Conta</DropdownMenuLabel>
-                <DropdownMenuSeparator />
-                <DropdownMenuItem className="cursor-pointer">
-                  <div className="flex flex-col">
-                    <span>{userName}</span>
-                    <span className="text-xs text-muted-foreground">{userEmail}</span>
-                  </div>
-                </DropdownMenuItem>
-                <DropdownMenuSeparator />
-                <DropdownMenuItem className="cursor-pointer" onClick={handleLogout}>
-                  <LogOut className="mr-2 h-4 w-4" />
-                  <span>Sair</span>
-                </DropdownMenuItem>
-              </DropdownMenuContent>
-            </DropdownMenu>
-          </div>
-        </div>
-        
-        <div className="flex md:hidden flex-1 justify-end">
-          <Sheet open={isMobileMenuOpen} onOpenChange={setIsMobileMenuOpen}>
-            <SheetTrigger asChild>
-              <Button variant="ghost" size="icon">
-                <Menu className="h-5 w-5" />
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button
+                variant="ghost"
+                className="relative h-8 w-8 rounded-full"
+              >
+                <Avatar className="h-8 w-8">
+                  <AvatarImage src="/placeholder.svg" alt={userName} />
+                  <AvatarFallback>{getInitials(userName)}</AvatarFallback>
+                </Avatar>
               </Button>
-            </SheetTrigger>
-            <SheetContent side="right">
-              <div className="grid gap-6 py-6">
-                <div className="flex flex-col space-y-4">
-                  <a
-                    href="#"
-                    className="transition-colors hover:text-foreground/80 text-foreground font-medium"
-                    onClick={() => setIsMobileMenuOpen(false)}
-                  >
-                    Dashboard
-                  </a>
-                  <a
-                    href="#"
-                    className="transition-colors hover:text-foreground/80 text-muted-foreground"
-                    onClick={() => setIsMobileMenuOpen(false)}
-                  >
-                    Tarefas
-                  </a>
-                  <a
-                    href="#"
-                    className="transition-colors hover:text-foreground/80 text-muted-foreground"
-                    onClick={() => setIsMobileMenuOpen(false)}
-                  >
-                    Equipe
-                  </a>
-                  <a
-                    href="#"
-                    className="transition-colors hover:text-foreground/80 text-muted-foreground"
-                    onClick={() => setIsMobileMenuOpen(false)}
-                  >
-                    Configurações
-                  </a>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent className="w-56" align="end" forceMount>
+              <DropdownMenuLabel className="font-normal">
+                <div className="flex flex-col space-y-1">
+                  <p className="text-sm font-medium leading-none">{userName}</p>
+                  <p className="text-xs leading-none text-muted-foreground">
+                    {userEmail}
+                  </p>
                 </div>
-                <div className="border-t pt-4">
-                  <div className="flex items-center mb-4">
-                    <User className="h-5 w-5 mr-2" />
-                    <div className="flex flex-col">
-                      <span className="font-medium">{userName}</span>
-                      <span className="text-xs text-muted-foreground">{userEmail}</span>
-                    </div>
-                  </div>
-                  <Button 
-                    variant="ghost" 
-                    className="w-full justify-start"
-                    onClick={handleLogout}
-                  >
-                    <LogOut className="mr-2 h-4 w-4" />
-                    <span>Sair</span>
-                  </Button>
-                </div>
-              </div>
-            </SheetContent>
-          </Sheet>
+              </DropdownMenuLabel>
+              <DropdownMenuSeparator />
+              <DropdownMenuItem>
+                <User className="mr-2 h-4 w-4" />
+                <span>Perfil</span>
+              </DropdownMenuItem>
+              <DropdownMenuItem>
+                <Settings className="mr-2 h-4 w-4" />
+                <span>Configurações</span>
+              </DropdownMenuItem>
+              <DropdownMenuSeparator />
+              <DropdownMenuItem onClick={onLogout}>
+                <LogOut className="mr-2 h-4 w-4" />
+                <span>Sair</span>
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
         </div>
       </div>
     </header>

@@ -9,13 +9,246 @@ export type Json =
 export type Database = {
   public: {
     Tables: {
-      [_ in never]: never
+      attachments: {
+        Row: {
+          id: string
+          name: string
+          size: number
+          task_id: string
+          type: string
+          uploaded_at: string
+          url: string
+          user_id: string
+        }
+        Insert: {
+          id?: string
+          name: string
+          size: number
+          task_id: string
+          type: string
+          uploaded_at?: string
+          url: string
+          user_id: string
+        }
+        Update: {
+          id?: string
+          name?: string
+          size?: number
+          task_id?: string
+          type?: string
+          uploaded_at?: string
+          url?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "attachments_task_id_fkey"
+            columns: ["task_id"]
+            isOneToOne: false
+            referencedRelation: "tasks"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "attachments_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      comments: {
+        Row: {
+          content: string
+          created_at: string
+          id: string
+          task_id: string
+          user_id: string
+        }
+        Insert: {
+          content: string
+          created_at?: string
+          id?: string
+          task_id: string
+          user_id: string
+        }
+        Update: {
+          content?: string
+          created_at?: string
+          id?: string
+          task_id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "comments_task_id_fkey"
+            columns: ["task_id"]
+            isOneToOne: false
+            referencedRelation: "tasks"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "comments_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      events: {
+        Row: {
+          clinic_id: string
+          created_at: string
+          event_date: string
+          id: string
+        }
+        Insert: {
+          clinic_id: string
+          created_at?: string
+          event_date: string
+          id?: string
+        }
+        Update: {
+          clinic_id?: string
+          created_at?: string
+          event_date?: string
+          id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "events_clinic_id_fkey"
+            columns: ["clinic_id"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      task_templates: {
+        Row: {
+          created_at: string
+          default_owner: string | null
+          description: string | null
+          due_in_days: number
+          id: string
+          title: string
+        }
+        Insert: {
+          created_at?: string
+          default_owner?: string | null
+          description?: string | null
+          due_in_days: number
+          id?: string
+          title: string
+        }
+        Update: {
+          created_at?: string
+          default_owner?: string | null
+          description?: string | null
+          due_in_days?: number
+          id?: string
+          title?: string
+        }
+        Relationships: []
+      }
+      tasks: {
+        Row: {
+          attachments: Json | null
+          comments: Json | null
+          created_at: string
+          description: string | null
+          due_date: string
+          event_id: string
+          id: string
+          owner: string | null
+          status: string
+          template_id: string | null
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          attachments?: Json | null
+          comments?: Json | null
+          created_at?: string
+          description?: string | null
+          due_date: string
+          event_id: string
+          id?: string
+          owner?: string | null
+          status?: string
+          template_id?: string | null
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          attachments?: Json | null
+          comments?: Json | null
+          created_at?: string
+          description?: string | null
+          due_date?: string
+          event_id?: string
+          id?: string
+          owner?: string | null
+          status?: string
+          template_id?: string | null
+          title?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "tasks_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: false
+            referencedRelation: "events"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "tasks_template_id_fkey"
+            columns: ["template_id"]
+            isOneToOne: false
+            referencedRelation: "task_templates"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      users: {
+        Row: {
+          created_at: string
+          email: string
+          id: string
+          name: string
+          role: string
+        }
+        Insert: {
+          created_at?: string
+          email: string
+          id: string
+          name: string
+          role: string
+        }
+        Update: {
+          created_at?: string
+          email?: string
+          id?: string
+          name?: string
+          role?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      generate_event_tasks: {
+        Args: { event_id: string }
+        Returns: undefined
+      }
+      is_admin: {
+        Args: { user_id: string }
+        Returns: boolean
+      }
     }
     Enums: {
       [_ in never]: never

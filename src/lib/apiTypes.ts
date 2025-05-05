@@ -67,6 +67,39 @@ export interface TaskTemplate {
 
 // Utility functions to convert between DB and frontend types
 export function mapDbTaskToTask(dbTask: DbTask): Task {
+  // Create empty arrays for comments and attachments by default
+  let comments: Comment[] = [];
+  let attachments: Attachment[] = [];
+  
+  // If dbTask.comments exists and is an array, try to convert each item to a Comment
+  if (dbTask.comments && Array.isArray(dbTask.comments)) {
+    comments = (dbTask.comments as any[]).map(comment => {
+      // This is a simplified conversion - in a real app, you'd validate each field
+      return {
+        id: comment.id || '',
+        content: comment.content || '',
+        user: comment.user || { id: '', name: '', email: '', role: 'staff' },
+        createdAt: new Date(comment.created_at || Date.now())
+      };
+    });
+  }
+  
+  // If dbTask.attachments exists and is an array, try to convert each item to an Attachment
+  if (dbTask.attachments && Array.isArray(dbTask.attachments)) {
+    attachments = (dbTask.attachments as any[]).map(attachment => {
+      // This is a simplified conversion - in a real app, you'd validate each field
+      return {
+        id: attachment.id || '',
+        name: attachment.name || '',
+        url: attachment.url || '',
+        type: attachment.type || '',
+        size: attachment.size || 0,
+        uploadedBy: attachment.uploadedBy || { id: '', name: '', email: '', role: 'staff' },
+        uploadedAt: new Date(attachment.uploaded_at || Date.now())
+      };
+    });
+  }
+  
   return {
     id: dbTask.id,
     title: dbTask.title,
@@ -74,8 +107,8 @@ export function mapDbTaskToTask(dbTask: DbTask): Task {
     status: dbTask.status as TaskStatus,
     dueDate: new Date(dbTask.due_date),
     owner: dbTask.owner || '',
-    comments: Array.isArray(dbTask.comments) ? dbTask.comments : [],
-    attachments: Array.isArray(dbTask.attachments) ? dbTask.attachments : [],
+    comments: comments,
+    attachments: attachments,
     createdAt: new Date(dbTask.created_at),
     updatedAt: new Date(dbTask.updated_at),
     isUrgent: new Date(dbTask.due_date) < new Date() && dbTask.status !== 'done'

@@ -1,6 +1,6 @@
 
 import { useState, useEffect } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, Link } from "react-router-dom";
 import Navbar from "@/components/layout/Navbar";
 import LoginForm from "@/components/auth/LoginForm";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -13,7 +13,7 @@ import { toast } from "@/hooks/use-toast";
 import { addDays } from "date-fns";
 import { useTheme } from "@/components/ThemeProvider";
 import { supabase } from "@/integrations/supabase/client";
-import { Moon, Sun } from "lucide-react";
+import { Moon, Sun, UserPlus, Users } from "lucide-react";
 
 const Index = () => {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
@@ -22,6 +22,7 @@ const Index = () => {
   const [eventDate, setEventDate] = useState<Date | undefined>(addDays(new Date(), 30));
   const [userEmail, setUserEmail] = useState<string>("");
   const [userName, setUserName] = useState<string>("");
+  const [isAdmin, setIsAdmin] = useState(false);
   const { theme, setTheme } = useTheme();
   const navigate = useNavigate();
   
@@ -47,6 +48,7 @@ const Index = () => {
             
           if (userProfile) {
             setUserName(userProfile.name);
+            setIsAdmin(userProfile.role === 'admin');
           }
         }
         
@@ -137,6 +139,7 @@ const Index = () => {
         if (userProfile) {
           setUserName(userProfile.name);
           setUserEmail(data.user.email || "");
+          setIsAdmin(userProfile.role === 'admin');
         }
         
         fetchTasks();
@@ -159,6 +162,7 @@ const Index = () => {
     setUserEmail("");
     setUserName("");
     setTasks([]);
+    setIsAdmin(false);
   };
   
   const handleStatusChange = async (taskId: string, newStatus: TaskStatus) => {
@@ -257,8 +261,17 @@ const Index = () => {
             {theme === "dark" ? <Sun className="h-5 w-5" /> : <Moon className="h-5 w-5" />}
           </Button>
         </div>
-        <div className="container max-w-screen-lg mx-auto px-4 py-8 flex-1 flex items-center justify-center">
+        <div className="container max-w-screen-lg mx-auto px-4 py-8 flex-1 flex flex-col items-center justify-center">
           <LoginForm onLogin={handleLogin} />
+          <div className="mt-6 text-center">
+            <p className="mb-2 text-muted-foreground">Não tem uma conta ainda?</p>
+            <Link to="/register">
+              <Button variant="outline">
+                <UserPlus className="mr-2 h-4 w-4" />
+                Cadastre-se
+              </Button>
+            </Link>
+          </div>
         </div>
       </div>
     );
@@ -285,6 +298,14 @@ const Index = () => {
             </div>
             
             <div className="flex items-center gap-4">
+              {isAdmin && (
+                <Link to="/users">
+                  <Button variant="outline">
+                    <Users className="mr-2 h-4 w-4" />
+                    Gerenciar Usuários
+                  </Button>
+                </Link>
+              )}
               <DateSelector
                 label="Data do Evento"
                 date={eventDate}

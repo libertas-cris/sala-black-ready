@@ -10,22 +10,30 @@ import { supabase } from "@/integrations/supabase/client";
 import Index from "./pages/Index";
 import Register from "./pages/Register";
 import Users from "./pages/Users";
+import Admin from "./pages/Admin";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
 
 const App = () => {
   const [isAuthenticated, setIsAuthenticated] = useState<boolean | null>(null);
+  const [userEmail, setUserEmail] = useState<string | null>(null);
 
   useEffect(() => {
     const checkAuth = async () => {
       const { data } = await supabase.auth.getSession();
       setIsAuthenticated(!!data.session);
 
+      if (data.session) {
+        const { data: userData } = await supabase.auth.getUser();
+        setUserEmail(userData.user?.email || null);
+      }
+
       // Set up auth listener
       const { data: { subscription } } = supabase.auth.onAuthStateChange(
-        (event, session) => {
+        async (event, session) => {
           setIsAuthenticated(!!session);
+          setUserEmail(session?.user?.email || null);
         }
       );
 
@@ -59,6 +67,10 @@ const App = () => {
               <Route 
                 path="/users" 
                 element={isAuthenticated ? <Users /> : <Navigate to="/" replace />} 
+              />
+              <Route 
+                path="/admin" 
+                element={isAuthenticated && userEmail === 'admin@salaback.com' ? <Admin /> : <Navigate to="/" replace />} 
               />
               {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
               <Route path="*" element={<NotFound />} />

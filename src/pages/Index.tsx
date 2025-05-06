@@ -7,7 +7,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import TaskList from "@/components/tasks/TaskList";
 import DashboardOverview from "@/components/dashboard/DashboardOverview";
 import DateSelector from "@/components/ui/DateSelector";
-import { TaskStatus, Task } from "@/lib/apiTypes";
+import { TaskStatus, Task, mapDbTaskToTask, mapDbEventToEvent } from "@/lib/apiTypes";
 import { Button } from "@/components/ui/button";
 import { toast } from "@/hooks/use-toast";
 import { addDays } from "date-fns";
@@ -63,49 +63,87 @@ const Index = () => {
   }, []);
   
   const fetchTasks = async () => {
-    // This would be replaced with actual Supabase query in production
-    // For now, using mockTasks to prevent errors
-    const { data: eventsData, error: eventsError } = await supabase
-      .from('events')
-      .select('*')
-      .limit(1);
+    try {
+      const { data: userData } = await supabase.auth.getUser();
+      if (!userData.user) return;
       
-    if (eventsError) {
-      console.error("Error fetching events:", eventsError);
-      return;
-    }
-    
-    if (eventsData && eventsData.length > 0) {
-      const eventId = eventsData[0].id;
-      setEventDate(new Date(eventsData[0].event_date));
-      
-      const { data: tasksData, error: tasksError } = await supabase
-        .from('tasks')
+      // Buscar o evento do usuário
+      const { data: eventsData, error: eventsError } = await supabase
+        .from('events')
         .select('*')
-        .eq('event_id', eventId);
+        .eq('clinic_id', userData.user.id)
+        .limit(1)
+        .order('created_at', { ascending: false });
         
-      if (tasksError) {
-        console.error("Error fetching tasks:", tasksError);
+      if (eventsError) {
+        console.error("Erro ao buscar eventos:", eventsError);
         return;
       }
       
-      if (tasksData) {
-        const formattedTasks: Task[] = tasksData.map(task => ({
-          id: task.id,
-          title: task.title,
-          description: task.description || "",
-          status: task.status as TaskStatus,
-          dueDate: new Date(task.due_date),
-          owner: task.owner || "",
-          comments: [],
-          attachments: [],
-          createdAt: new Date(task.created_at),
-          updatedAt: new Date(task.updated_at),
-          isUrgent: new Date(task.due_date) < new Date() && task.status !== 'done'
-        }));
+      if (eventsData && eventsData.length > 0) {
+        const event = mapDbEventToEvent(eventsData[0]);
+        setEventDate(event.eventDate);
         
-        setTasks(formattedTasks);
+        // Buscar tarefas associadas ao evento
+        const { data: tasksData, error: tasksError } = await supabase
+          .from('tasks')
+          .select('*')
+          .eq('event_id', event.id)
+          .order('due_date', { ascending: true });
+          
+        if (tasksError) {
+          console.error("Erro ao buscar tarefas:", tasksError);
+          return;
+        }
+        
+        if (tasksData) {
+          const formattedTasks: Task[] = tasksData.map(task => mapDbTaskToTask(task));
+          setTasks(formattedTasks);
+        }
+      } else {
+        // Criar um evento padrão se não existir
+        const futureDate = addDays(new Date(), 30);
+        
+        const { data: newEvent, error: createError } = await supabase
+          .from('events')
+          .insert({
+            clinic_id: userData.user.id,
+            event_date: futureDate.toISOString()
+          })
+          .select()
+          .single();
+          
+        if (createError) {
+          console.error("Erro ao criar evento:", createError);
+          return;
+        }
+        
+        if (newEvent) {
+          // Chamar função para gerar tarefas
+          const { error: fnError } = await supabase.rpc('generate_event_tasks', {
+            event_id: newEvent.id
+          });
+          
+          if (fnError) {
+            console.error("Erro ao gerar tarefas:", fnError);
+          } else {
+            // Buscar as tarefas geradas
+            const { data: tasksData } = await supabase
+              .from('tasks')
+              .select('*')
+              .eq('event_id', newEvent.id)
+              .order('due_date', { ascending: true });
+              
+            if (tasksData) {
+              const formattedTasks: Task[] = tasksData.map(task => mapDbTaskToTask(task));
+              setTasks(formattedTasks);
+              setEventDate(new Date(newEvent.event_date));
+            }
+          }
+        }
       }
+    } catch (error) {
+      console.error("Erro ao buscar dados:", error);
     }
   };
   
@@ -202,28 +240,37 @@ const Index = () => {
     if (!date) return;
     
     try {
-      setEventDate(date);
+      const { data: userData } = await supabase.auth.getUser();
+      if (!userData.user) return;
       
-      // In a real app, we would update the event date in the database
-      const { data: eventsData } = await supabase
+      // Atualizar a data do evento
+      const { data: eventsData, error: fetchError } = await supabase
         .from('events')
         .select('id')
-        .limit(1);
+        .eq('clinic_id', userData.user.id)
+        .limit(1)
+        .order('created_at', { ascending: false });
+      
+      if (fetchError) {
+        throw fetchError;
+      }
       
       if (eventsData && eventsData.length > 0) {
         const eventId = eventsData[0].id;
         
-        const { error } = await supabase
+        const { error: updateError } = await supabase
           .from('events')
           .update({ event_date: date.toISOString() })
           .eq('id', eventId);
         
-        if (error) {
-          throw error;
+        if (updateError) {
+          throw updateError;
         }
         
-        // Task dates are updated automatically by the database trigger
-        // Refresh tasks to show the updated due dates
+        setEventDate(date);
+        
+        // As datas das tarefas são atualizadas automaticamente pelo trigger no banco de dados
+        // Buscar novamente as tarefas para mostrar as datas atualizadas
         fetchTasks();
         
         toast({
@@ -315,7 +362,7 @@ const Index = () => {
             </div>
           </div>
           
-          <DashboardOverview eventDate={eventDate} />
+          <DashboardOverview tasks={tasks} eventDate={eventDate} />
           
           <div className="mt-8">
             <Tabs defaultValue="todos" className="w-full">

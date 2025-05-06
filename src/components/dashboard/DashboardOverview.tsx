@@ -1,25 +1,33 @@
 
 import { Task, TaskStatus } from "@/lib/types";
-import { 
-  getCompletionPercentage, 
-  getTasksByStatus, 
-  getTotalTasksByStatus, 
-  getUrgentTasks 
-} from "@/lib/mockData";
 import { Progress } from "@/components/ui/progress";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { CalendarCheck2, CheckCircle2, Clock, AlertCircle } from "lucide-react";
 
 interface DashboardOverviewProps {
+  tasks: Task[];
   eventDate: Date | undefined;
 }
 
-const DashboardOverview = ({ eventDate }: DashboardOverviewProps) => {
-  const completionPercentage = getCompletionPercentage();
-  const taskCounts = getTotalTasksByStatus();
-  const urgentTasks = getUrgentTasks();
+const DashboardOverview = ({ tasks, eventDate }: DashboardOverviewProps) => {
+  // Calcular porcentagem de conclusão
+  const completionPercentage = tasks.length 
+    ? Math.round((tasks.filter(task => task.status === 'done').length / tasks.length) * 100) 
+    : 0;
   
-  // Calculate days remaining until event
+  // Contar tarefas por status
+  const taskCounts = {
+    todo: tasks.filter(task => task.status === 'todo').length,
+    'in-progress': tasks.filter(task => task.status === 'in-progress').length,
+    done: tasks.filter(task => task.status === 'done').length
+  };
+  
+  // Obter tarefas urgentes (vencidas e não concluídas)
+  const urgentTasks = tasks.filter(task => 
+    task.isUrgent && task.status !== 'done'
+  );
+  
+  // Calcular dias restantes até o evento
   const daysToEvent = eventDate ? 
     Math.ceil((eventDate.getTime() - new Date().getTime()) / (1000 * 60 * 60 * 24)) : 
     null;

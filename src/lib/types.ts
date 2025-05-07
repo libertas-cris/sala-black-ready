@@ -1,13 +1,12 @@
-
 export type TaskStatus = 'todo' | 'in-progress' | 'done';
 
-export interface User {
+export type User = {
   id: string;
   name: string;
   email: string;
   role: 'admin' | 'staff';
   ban_duration?: string | null;
-}
+};
 
 export interface Task {
   id: string;

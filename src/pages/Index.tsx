@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Link, useNavigate } from "react-router-dom";
@@ -95,6 +94,25 @@ const Index = () => {
     };
 
     checkAuth();
+
+    // Adicionar listener para eventos de autenticação
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
+      if (event === 'SIGNED_IN') {
+        setIsAuthenticated(true);
+        checkAuth();
+      } else if (event === 'SIGNED_OUT') {
+        setIsAuthenticated(false);
+        setUserName('');
+        setUserEmail('');
+        setIsAdmin(false);
+        setTasks([]);
+        setEventDate(undefined);
+      }
+    });
+
+    return () => {
+      subscription.unsubscribe();
+    };
   }, []);
 
   // Função de login
@@ -109,7 +127,10 @@ const Index = () => {
         throw error;
       }
 
-      // Login bem-sucedido é tratado pela assinatura do evento de auth
+      toast({
+        title: "Login realizado com sucesso",
+        description: "Bem-vindo ao sistema CAIXA RÁPIDO",
+      });
     } catch (error: any) {
       console.error("Erro no login:", error);
       toast({

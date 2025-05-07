@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { z } from "zod";
 import { useForm } from "react-hook-form";
@@ -40,14 +39,7 @@ const LoginForm = ({ onLogin }: LoginFormProps) => {
   const handleSubmit = async (values: z.infer<typeof formSchema>) => {
     setIsLoading(true);
     try {
-      // In a real app, we would call an API here
-      await new Promise(resolve => setTimeout(resolve, 1000)); // Simulating API call
       onLogin(values.email, values.password);
-      
-      toast({
-        title: "Login realizado com sucesso",
-        description: "Bem-vindo ao sistema CAIXA RÁPIDO",
-      });
     } catch (error) {
       toast({
         title: "Erro ao fazer login",

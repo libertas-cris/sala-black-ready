@@ -38,11 +38,13 @@ import { Badge } from "@/components/ui/badge";
 import { AlertDialogContent, AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { useTheme } from "@/components/ThemeProvider";
 import { UserPlus, MoreVertical, ShieldAlert, User as LucideUser, Trash2, Lock, Unlock } from "lucide-react";
-import { User } from "@/lib/types";
+import type { User } from "../lib/types";
 
-interface UserData extends User {
+interface UserData extends Omit<User, 'role'> {
   created_at: string;
   status?: string;
+  role: 'admin' | 'staff';
+  ban_duration?: string | null;
 }
 
 const Admin = () => {

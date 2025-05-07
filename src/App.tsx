@@ -1,4 +1,3 @@
-
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -13,27 +12,62 @@ import Users from "./pages/Users";
 import Admin from "./pages/Admin";
 import NotFound from "./pages/NotFound";
 
-const queryClient = new QueryClient();
+const ADMIN_EMAIL = import.meta.env.VITE_ADMIN_EMAIL || 'admin@salaback.com';
+
+interface AuthState {
+  isAuthenticated: boolean;
+  userEmail: string | null;
+}
+
+const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: {
+      staleTime: 1000 * 60 * 5, // 5 minutos
+      retry: 1,
+    },
+  },
+});
 
 const App = () => {
-  const [isAuthenticated, setIsAuthenticated] = useState<boolean | null>(null);
-  const [userEmail, setUserEmail] = useState<string | null>(null);
+  const [authState, setAuthState] = useState<AuthState>({
+    isAuthenticated: false,
+    userEmail: null,
+  });
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     const checkAuth = async () => {
-      const { data } = await supabase.auth.getSession();
-      setIsAuthenticated(!!data.session);
+      try {
+        const { data: sessionData, error: sessionError } = await supabase.auth.getSession();
+        
+        if (sessionError) throw sessionError;
 
-      if (data.session) {
-        const { data: userData } = await supabase.auth.getUser();
-        setUserEmail(userData.user?.email || null);
+        const isAuthenticated = !!sessionData.session;
+        let userEmail = null;
+
+        if (isAuthenticated) {
+          const { data: userData, error: userError } = await supabase.auth.getUser();
+          if (userError) throw userError;
+          userEmail = userData.user?.email || null;
+        }
+
+        setAuthState({ isAuthenticated, userEmail });
+        setError(null);
+      } catch (err) {
+        setError(err instanceof Error ? err.message : 'Erro ao verificar autenticação');
+        setAuthState({ isAuthenticated: false, userEmail: null });
+      } finally {
+        setIsLoading(false);
       }
 
       // Set up auth listener
       const { data: { subscription } } = supabase.auth.onAuthStateChange(
         async (event, session) => {
-          setIsAuthenticated(!!session);
-          setUserEmail(session?.user?.email || null);
+          setAuthState({
+            isAuthenticated: !!session,
+            userEmail: session?.user?.email || null,
+          });
         }
       );
 
@@ -45,11 +79,18 @@ const App = () => {
     checkAuth();
   }, []);
 
-  if (isAuthenticated === null) {
-    // Estado inicial de carregamento
+  if (isLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <p>Carregando...</p>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <p className="text-red-500">Erro: {error}</p>
       </div>
     );
   }
@@ -66,13 +107,12 @@ const App = () => {
               <Route path="/register" element={<Register />} />
               <Route 
                 path="/users" 
-                element={isAuthenticated ? <Users /> : <Navigate to="/" replace />} 
+                element={authState.isAuthenticated ? <Users /> : <Navigate to="/" replace />} 
               />
               <Route 
                 path="/admin" 
-                element={isAuthenticated && userEmail === 'admin@salaback.com' ? <Admin /> : <Navigate to="/" replace />} 
+                element={authState.isAuthenticated && authState.userEmail === ADMIN_EMAIL ? <Admin /> : <Navigate to="/" replace />} 
               />
-              {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
               <Route path="*" element={<NotFound />} />
             </Routes>
           </BrowserRouter>

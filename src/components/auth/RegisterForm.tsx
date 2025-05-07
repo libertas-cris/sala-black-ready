@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { z } from "zod";
 import { useForm } from "react-hook-form";
@@ -44,51 +43,61 @@ const RegisterForm = ({ onRegister, adminCreation = false }: RegisterFormProps) 
   const handleSubmit = async (values: z.infer<typeof formSchema>) => {
     setIsLoading(true);
     try {
+      console.log("Iniciando registro do usuário:", values.email);
+      
       // Register the user with Supabase Auth
-      const { data, error } = await supabase.auth.signUp({
+      const { data: authData, error: authError } = await supabase.auth.signUp({
         email: values.email,
         password: values.password,
         options: {
           data: {
-            name: values.name
+            name: values.name,
+            role: adminCreation ? 'staff' : 'admin'
           }
         }
       });
       
-      if (error) {
-        throw error;
+      if (authError) {
+        console.error("Erro no auth.signUp:", authError);
+        throw authError;
       }
 
-      // If admin is creating this account, don't sign in
-      if (adminCreation) {
-        toast({
-          title: "Usuário criado com sucesso",
-          description: `${values.name} foi adicionado com o email ${values.email}`,
-        });
-        
-        if (onRegister) {
-          onRegister();
-        }
-        
-        form.reset();
-      } else {
-        toast({
-          title: "Registro realizado com sucesso",
-          description: "Você foi cadastrado e já está autenticado",
-        });
-        
-        if (onRegister) {
-          onRegister();
+      console.log("Usuário criado no Auth:", authData);
+
+      if (authData.user) {
+        // If admin is creating this account, don't sign in
+        if (adminCreation) {
+          toast({
+            title: "Usuário criado com sucesso",
+            description: `${values.name} foi adicionado com o email ${values.email}`,
+          });
+          
+          if (onRegister) {
+            onRegister();
+          }
+          
+          form.reset();
+        } else {
+          toast({
+            title: "Registro realizado com sucesso",
+            description: "Você foi cadastrado e já está autenticado",
+          });
+          
+          if (onRegister) {
+            onRegister();
+          }
         }
       }
     } catch (error: any) {
-      console.error("Registration error:", error);
+      console.error("Registration error completo:", error);
       
       let errorMessage = "Erro ao registrar. Tente novamente.";
       
       if (error.message) {
         if (error.message.includes("already registered")) {
           errorMessage = "Este email já está registrado. Tente fazer login.";
+        } else if (error.message.includes("Database error")) {
+          errorMessage = `Erro ao criar usuário no banco de dados: ${error.message}`;
         }
       }
       

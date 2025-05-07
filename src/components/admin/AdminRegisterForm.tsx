@@ -56,19 +56,21 @@ export function AdminRegisterForm({ onSuccess }: AdminRegisterFormProps) {
     setIsLoading(true);
 
     try {
-      // Step 1: Create user in authentication system
-      const { data: authData, error: authError } = await supabase.auth.admin.createUser({
+      // Step 1: Create user using standard signUp method instead of admin.createUser
+      const { data: authData, error: authError } = await supabase.auth.signUp({
         email: data.email,
         password: data.password,
-        email_confirm: true,
-        user_metadata: {
-          name: data.name,
-        },
+        options: {
+          data: {
+            name: data.name,
+          },
+          emailRedirectTo: window.location.origin,
+        }
       });
 
       if (authError) throw authError;
       
-      // Step 2: Update the role in the users table
+      // Step 2: If signup successful, update the role in the users table
       if (authData.user) {
         const { error: roleError } = await supabase
           .from("users")

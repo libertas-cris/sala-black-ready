@@ -56,7 +56,18 @@ export function AdminRegisterForm({ onSuccess }: AdminRegisterFormProps) {
     setIsLoading(true);
 
     try {
-      // Step 1: Create user using standard signUp method instead of admin.createUser
+      // First, directly insert the user into the users table
+      const { error: userInsertError } = await supabase
+        .from("users")
+        .insert({
+          name: data.name,
+          email: data.email,
+          role: data.role
+        });
+
+      if (userInsertError) throw userInsertError;
+
+      // Then create the auth account
       const { data: authData, error: authError } = await supabase.auth.signUp({
         email: data.email,
         password: data.password,
@@ -68,16 +79,14 @@ export function AdminRegisterForm({ onSuccess }: AdminRegisterFormProps) {
         }
       });
 
-      if (authError) throw authError;
-      
-      // Step 2: If signup successful, update the role in the users table
-      if (authData.user) {
-        const { error: roleError } = await supabase
+      if (authError) {
+        // If auth creation fails, try to clean up the users table entry we just made
+        await supabase
           .from("users")
-          .update({ role: data.role })
-          .eq("id", authData.user.id);
-
-        if (roleError) throw roleError;
+          .delete()
+          .eq("email", data.email);
+          
+        throw authError;
       }
 
       toast({

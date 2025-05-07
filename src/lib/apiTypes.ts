@@ -1,4 +1,3 @@
-
 import { Database } from "@/integrations/supabase/types";
 
 // Extending the Supabase types with our own application types
@@ -17,6 +16,7 @@ export interface User {
   name: string;
   email: string;
   role: 'admin' | 'staff';
+  ban_duration?: string | null;
 }
 
 export interface Task {

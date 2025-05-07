@@ -39,6 +39,7 @@ import { Badge } from "@/components/ui/badge";
 import { AlertDialogContent, AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { useTheme } from "@/components/ThemeProvider";
 import { UserPlus, MoreVertical, ShieldAlert, User, Trash2, Lock, Unlock } from "lucide-react";
+import { User as UserType } from "@/lib/types";
 
 interface UserData {
   id: string;

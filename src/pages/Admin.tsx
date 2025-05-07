@@ -19,7 +19,6 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import {
   Dialog,
   DialogContent,
@@ -38,7 +37,8 @@ import { Badge } from "@/components/ui/badge";
 import { AlertDialogContent, AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { useTheme } from "@/components/ThemeProvider";
 import { UserPlus, MoreVertical, ShieldAlert, User as LucideUser, Trash2, Lock, Unlock } from "lucide-react";
-import type { User } from "../lib/types";
+import { User } from "@/lib/types";
+import { AdminRegisterForm } from "@/components/admin/AdminRegisterForm";
 
 interface UserData extends Omit<User, 'role'> {
   created_at: string;
@@ -126,10 +126,10 @@ const Admin = () => {
           return {
             ...user,
             ban_duration: authUser?.user?.ban_duration || null
-          };
+          } as UserData;
         }));
         
-        setUsers(usersWithStatus as UserData[]);
+        setUsers(usersWithStatus);
       }
     } catch (error) {
       console.error("Error fetching users:", error);
@@ -141,7 +141,7 @@ const Admin = () => {
     }
   };
 
-  const handleRoleChange = async (userId: string, newRole: string) => {
+  const handleRoleChange = async (userId: string, newRole: 'admin' | 'staff') => {
     try {
       const { error } = await supabase
         .from('users')
@@ -341,7 +341,7 @@ const Admin = () => {
                     Preencha os dados para criar uma nova conta de usuário.
                   </DialogDescription>
                 </DialogHeader>
-                {/* RegisterForm component will be rendered here */}
+                <AdminRegisterForm onSuccess={handleUserCreated} />
               </DialogContent>
             </Dialog>
           </div>
@@ -393,7 +393,7 @@ const Admin = () => {
                             )}
                             {user.role === 'admin' && user.email !== 'admin@salaback.com' && (
                               <DropdownMenuItem onClick={() => handleRoleChange(user.id, 'staff')}>
-                                <User className="mr-2 h-4 w-4" />
+                                <LucideUser className="mr-2 h-4 w-4" />
                                 Rebaixar para Staff
                               </DropdownMenuItem>
                             )}
